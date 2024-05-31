@@ -5,10 +5,10 @@ import groovy.transform.CompileStatic
 @CompileStatic
 record DesiredChannelContents(
 		long channelId,
-		List<DesiredMessage> desiredMessages
+		List<DesiredMarkdownMessage> desiredMessages
 ) {
 
-	static DesiredChannelContents fromDir(File file) {
+	static DesiredChannelContents fromDir(Bot bot, File file) {
 		if (file.isDirectory()) {
 			def props = new Properties()
 			def propsFile = file.toPath().resolve("channel.properties").toFile()
@@ -22,7 +22,7 @@ record DesiredChannelContents(
 				return f.name.toLowerCase(Locale.ROOT) ==~ /\d+_[^.]+\.(md|txt)/
 			} as FileFilter)
 
-			def desired = files.collect { DesiredMessage.fromFile it }
+			def desired = files.collect { DesiredMarkdownMessage.fromFile bot, it }
 
 			return new DesiredChannelContents(channelId, desired)
 

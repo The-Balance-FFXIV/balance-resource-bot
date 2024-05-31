@@ -4,12 +4,14 @@ import discord4j.common.util.Snowflake
 import discord4j.core.DiscordClient
 import discord4j.core.GatewayDiscordClient
 import discord4j.discordjson.json.MessageData
-import discord4j.discordjson.json.MessageEditRequest
+import discord4j.rest.entity.RestChannel
+import discord4j.rest.entity.RestMessage
 import groovy.transform.CompileStatic
 import reactor.util.Logger
 import reactor.util.Loggers
+import reactor.util.annotation.Nullable
 
-import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 @CompileStatic
 class Bot {
@@ -18,6 +20,7 @@ class Bot {
 	private DiscordClient client
 	private GatewayDiscordClient gatewayClient
 	private long ownUserId
+	private final Map<File, MessageData> fileMessageMap = new ConcurrentHashMap<>()
 
 	private Bot(String token) {
 		this.token = token;
@@ -60,48 +63,73 @@ class Bot {
 
 			log.info "Starting directory ${it.name}"
 
-			DesiredChannelContents desired = DesiredChannelContents.fromDir it
-			List<MessageData> actual = getActualChannelContents desired.channelId()
+			DesiredChannelContents desiredState = DesiredChannelContents.fromDir this, it
 
-			int desiredCount = desired.desiredMessages().size()
-			int actualCount = actual.size()
-
-			// If count is the same, edit messages in-place
-			// If desired > count, edit the first (count) messages, then add the rest
-			// If desired < count, edit the first (desired) messages, then delete the rest
-			int editCount = Math.min(desiredCount, actualCount)
-			for (i in 0..<editCount) {
-				def desiredMsg = desired.desiredMessages()[i]
-				def actualMsg = actual[i]
-				if (desiredMsg.content() != actualMsg.content()) {
-					editMessage(actualMsg, desiredMsg)
-				}
+			// TODO: this does not resolve cross-channel links
+			def cc = new ChannelController(this, getChannel(desiredState.channelId()))
+			def sync = new ChannelSync(this, cc, desiredState)
+			int attempts = 10
+			SyncResult result;
+			do {
+				result = sync.sync()
+			} while (result.pending && (--attempts > 0))
+			if (result.pending) {
+				throw new RuntimeException("Failed: channel '${it.name}' still has pending hyperlinks!")
 			}
-
-			log.info "Desired #: ${desiredCount}, Actual #: ${actualCount}"
 			log.info "Finished directory ${it.name}"
-
 		}
 	}
 
-	List<MessageData> getActualChannelContents(long channelId) {
-		def channel = this.client.getChannelById(Snowflake.of(channelId))
-		channel.getMessagesBefore(Snowflake.of(Instant.now()))
-				.filter { it.author().id().asLong() == this.ownUserId }
-				.collectList()
-				.block()
-				.reversed()
+	RestChannel getChannel(long channelId) {
+		return this.client.getChannelById(Snowflake.of(channelId))
 	}
 
-	void editMessage(MessageData messageData, DesiredMessage desiredMessage) {
+	RestMessage getMessage(long channelId, long messageId) {
+		return this.client.getMessageById(Snowflake.of(channelId), Snowflake.of(messageId))
+	}
 
-		def msg = this.client.getMessageById(Snowflake.of(messageData.channelId()), Snowflake.of(messageData.id()))
+	long getOwnUserId() {
+		return ownUserId
+	}
 
-		msg.edit(MessageEditRequest.builder().with {
+	LinkResolution resolveLink(File base, String rawLink) {
+		try {
+			// Keep real URLs intact
+			return new LinkResolution(new URI(rawLink).toURL().toString(), false)
+		}
+		// If it isn't a real URL, resolve it as a relative file
+		catch (Throwable ignored) {
+			def destFile = base.toPath().parent.resolve(rawLink) toFile()
 
-			contentOrNull desiredMessage.content()
-			build()
+			if (destFile.isFile()) {
+				def link = getFileLink(destFile)
+				if (link != null) {
+					return new LinkResolution(link, false)
+				}
+				return new LinkResolution(rawLink, true)
+			}
+			else {
+				throw new IllegalStateException("Could not resolve link '${rawLink}' relative to '${base}")
+			}
+		}
+	}
 
-		}).block()
+	@Nullable
+	String getFileLink(File file) {
+		MessageData msg = fileMessageMap[file]
+		if (msg) {
+			long channelId = msg.channelId().asLong()
+			long msgId = msg.id().asLong()
+			msg.guildId()
+			long guildId = getChannel(channelId).data.block()
+					.guildId().toOptional()
+					.orElseThrow { throw new IllegalArgumentException("Message ${channelId}/${msgId} has no guild!") }.asLong()
+			return "https://discord.com/channels/${guildId}/${channelId}/${msgId}"
+		}
+		return null
+	}
+
+	void setFileMapping(File file, MessageData message) {
+		this.fileMessageMap[file] = message
 	}
 }

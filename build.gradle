@@ -12,8 +12,12 @@ repositories {
 dependencies {
     implementation 'org.apache.groovy:groovy:4.0.14'
     implementation 'com.discord4j:discord4j-core:3.2.5'
+    compileOnly 'org.jetbrains:annotations:24.1.0'
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    // https://mvnrepository.com/artifact/org.commonmark/commonmark
+    implementation group: 'org.commonmark', name: 'commonmark', version: '0.22.0'
+
 }
 
 test {
