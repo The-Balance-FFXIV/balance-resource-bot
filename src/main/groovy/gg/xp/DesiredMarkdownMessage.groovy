@@ -6,6 +6,9 @@ import org.commonmark.node.AbstractVisitor
 import org.commonmark.node.Link
 import org.commonmark.node.Node
 import org.commonmark.parser.Parser
+import org.commonmark.renderer.NodeRenderer
+import org.commonmark.renderer.markdown.MarkdownNodeRendererContext
+import org.commonmark.renderer.markdown.MarkdownNodeRendererFactory
 import org.commonmark.renderer.markdown.MarkdownRenderer
 
 @CompileStatic
@@ -26,7 +29,10 @@ class DesiredMarkdownMessage {
 
 	DesiredMessageContent getDesiredContent() {
 		def parser = Parser.builder().build()
-		def renderer = MarkdownRenderer.builder().build()
+		def renderer = MarkdownRenderer.builder().with {
+			nodeRendererFactory(new DiscordMarkdownNodeRendererFactory())
+			build()
+		}
 		Node document = parser.parse(file.text)
 		boolean pending = false
 		document.accept(new AbstractVisitor() {
@@ -37,6 +43,8 @@ class DesiredMarkdownMessage {
 					pending = true
 				}
 				// TODO: Prevent embeds
+				// This is currently broken because CoreMarkdownNodeRenderer has a list of special characters that
+				// justify wrapping the url in <>, which is a MD way of working around having a literal ) in the URL.
 				link.destination = "${resolved.value()}"
 				// doesn't work
 //				link.insertBefore(new Text("<"))

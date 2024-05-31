@@ -38,6 +38,7 @@ class ChannelSync {
 			DesiredMessageContent desiredContent = desiredMsg.desiredContent
 
 			if (desiredContent.pending()) {
+				// If pending, DON'T edit. No reason to, when we're just going to edit it again
 				stats.pending++
 			}
 			else if (desiredContent.content() != actualMsg.content()) {
@@ -52,7 +53,12 @@ class ChannelSync {
 		if (desiredCount > actualCount) {
 			for (i in actualCount..<desiredCount) {
 				def desiredMsg = desired[i]
+				// We still post even if pending, because we can't mess up message order.
+				// Anything pending will be fixed in the next pass.
 				// TODO: validate that the desired == actual now
+				if (desiredMsg.desiredContent.pending()) {
+					stats.pending++
+				}
 				def newMsg = channel.postMessage(desiredMsg)
 				stats.create++
 				bot.setFileMapping(desiredMsg.file, newMsg)

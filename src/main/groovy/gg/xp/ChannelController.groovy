@@ -1,6 +1,7 @@
 package gg.xp
 
 import discord4j.common.util.Snowflake
+import discord4j.discordjson.json.MessageCreateRequest
 import discord4j.discordjson.json.MessageData
 import discord4j.discordjson.json.MessageEditRequest
 import discord4j.rest.entity.RestChannel
@@ -39,7 +40,11 @@ class ChannelController {
 	}
 
 	MessageData postMessage(DesiredMarkdownMessage desiredMessage) {
-		return channel.createMessage(desiredMessage.desiredContent.content()).block()
+		return channel.createMessage(MessageCreateRequest.builder().with {
+			content desiredMessage.desiredContent.content()
+			embeds([])
+			build()
+		}).block()
 	}
 
 	void deleteMessage(MessageData messageData) {
