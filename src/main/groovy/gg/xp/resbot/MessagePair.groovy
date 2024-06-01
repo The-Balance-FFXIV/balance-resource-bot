@@ -1,4 +1,4 @@
-package gg.xp
+package gg.xp.resbot
 
 import discord4j.core.object.entity.Message
 import groovy.transform.CompileStatic

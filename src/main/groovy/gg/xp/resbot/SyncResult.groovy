@@ -1,4 +1,4 @@
-package gg.xp
+package gg.xp.resbot
 
 import groovy.transform.TupleConstructor
 

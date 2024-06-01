@@ -1,4 +1,4 @@
-package gg.xp
+package gg.xp.resbot
 
 import discord4j.common.util.Snowflake
 import discord4j.discordjson.json.MessageCreateRequest

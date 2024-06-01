@@ -1,4 +1,4 @@
-package gg.xp
+package gg.xp.resbot
 
 import discord4j.common.util.Snowflake
 import discord4j.core.DiscordClient
@@ -6,11 +6,13 @@ import discord4j.core.GatewayDiscordClient
 import discord4j.discordjson.json.MessageData
 import discord4j.rest.entity.RestChannel
 import discord4j.rest.entity.RestMessage
+import gg.xp.resbot.util.FileUtils
 import groovy.transform.CompileStatic
 import reactor.util.Logger
 import reactor.util.Loggers
 import reactor.util.annotation.Nullable
 
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 @CompileStatic
@@ -55,9 +57,7 @@ class Bot {
 
 		def dataDir = new File('data')
 
-		if (!dataDir.isDirectory()) {
-			throw new IllegalArgumentException("File '${dataDir}' does not exist or is not a directory")
-		}
+		FileUtils.assertIsDir dataDir
 
 		dataDir.listFiles().findAll { it.isDirectory() }.each {
 
@@ -99,7 +99,8 @@ class Bot {
 		}
 		// If it isn't a real URL, resolve it as a relative file
 		catch (Throwable ignored) {
-			def destFile = base.toPath().parent.resolve(rawLink) toFile()
+			Path basePath = base.isDirectory() ? base.toPath() : base.toPath().parent
+			def destFile = basePath.resolve(rawLink) toFile()
 
 			if (destFile.isFile()) {
 				def link = getFileLink(destFile)
@@ -130,6 +131,8 @@ class Bot {
 	}
 
 	void setFileMapping(File file, MessageData message) {
-		this.fileMessageMap[file] = message
+		if (file != null) {
+			this.fileMessageMap[file] = message
+		}
 	}
 }

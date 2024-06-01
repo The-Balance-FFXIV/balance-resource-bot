@@ -1,9 +1,10 @@
-package gg.xp
+package gg.xp.resbot
 
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
 import org.commonmark.node.Link
 import org.commonmark.node.Node
+import org.commonmark.node.Text
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.markdown.MarkdownNodeRendererContext
 import org.commonmark.renderer.markdown.MarkdownWriter
@@ -56,18 +57,21 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 					text(title, linkTitleEscapeInQuotes);
 					raw('"');
 				}
-
 				raw(')');
-
 			}
 		}
 	}
 
 	private void visitChildren(Node parent) {
-		Node next;
+		Node next
 		for (Node node = parent.getFirstChild(); node != null; node = next) {
 			next = node.getNext();
-			this.context.render(node);
+			if (node instanceof Text && node.parent instanceof Link) {
+				context.writer.text(node.literal, linkTitleEscapeInQuotes)
+			}
+			else {
+				this.context.render(node);
+			}
 		}
 
 	}

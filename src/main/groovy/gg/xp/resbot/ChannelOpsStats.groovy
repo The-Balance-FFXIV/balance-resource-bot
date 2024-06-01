@@ -1,4 +1,4 @@
-package gg.xp
+package gg.xp.resbot
 
 class ChannelOpsStats {
 	int noop

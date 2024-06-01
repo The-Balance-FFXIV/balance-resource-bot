@@ -1,4 +1,4 @@
-package gg.xp
+package gg.xp.resbot
 
 import discord4j.discordjson.json.MessageData
 import groovy.transform.CompileStatic
@@ -34,7 +34,9 @@ class ChannelSync {
 			def desiredMsg = desired[i]
 			def actualMsg = actual[i]
 			// Track the file for linking purposes
-			bot.setFileMapping(desiredMsg.file, actualMsg)
+			if (desiredMsg instanceof FileBasedMarkdownMessage) {
+				bot.setFileMapping(desiredMsg.file, actualMsg)
+			}
 			DesiredMessageContent desiredContent = desiredMsg.desiredContent
 
 			if (desiredContent.pending()) {
@@ -61,7 +63,9 @@ class ChannelSync {
 				}
 				def newMsg = channel.postMessage(desiredMsg)
 				stats.create++
-				bot.setFileMapping(desiredMsg.file, newMsg)
+				if (desiredMsg instanceof FileBasedMarkdownMessage) {
+					bot.setFileMapping(desiredMsg.file, newMsg)
+				}
 			}
 		}
 		else if (desiredCount < actualCount) {

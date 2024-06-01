@@ -1,4 +1,4 @@
-package gg.xp
+package gg.xp.resbot
 
 record DesiredMessageContent(String content, boolean pending) {
 }
