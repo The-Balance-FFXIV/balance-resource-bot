@@ -1,5 +1,6 @@
 plugins {
     id 'groovy'
+    id 'application'
 }
 
 group = 'gg.xp'
@@ -10,18 +11,31 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.apache.groovy:groovy:4.0.14'
-    implementation 'com.discord4j:discord4j-core:3.2.5'
+    implementation 'org.apache.groovy:groovy:4.0.21'
+    implementation 'com.discord4j:discord4j-core:3.2.6'
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     implementation 'org.apache.commons:commons-lang3:3.14.0'
     compileOnly 'org.jetbrains:annotations:24.1.0'
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+//    testImplementation platform('org.junit:junit-bom:5.10.2')
+//    testImplementation 'org.junit.jupiter:junit-jupiter'
     // https://mvnrepository.com/artifact/org.commonmark/commonmark
     implementation group: 'org.commonmark', name: 'commonmark', version: '0.22.0'
-
 }
 
-test {
-    useJUnitPlatform()
+application {
+    mainClass = 'gg.xp.resbot.Main'
 }
+
+def javaVersion = JavaVersion.VERSION_21
+
+java {
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+//
+//test {
+//    useJUnitPlatform()
+//}
