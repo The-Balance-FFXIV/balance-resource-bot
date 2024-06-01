@@ -1,6 +1,11 @@
+import com.bmuschko.gradle.docker.tasks.image.*
+import com.bmuschko.gradle.docker.tasks.container.*
+
 plugins {
     id 'groovy'
     id 'application'
+    id 'com.bmuschko.docker-spring-boot-application' version '6.1.4'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'gg.xp'
@@ -35,7 +40,31 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
 }
+
+jar {
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
+}
 //
 //test {
 //    useJUnitPlatform()
 //}
+
+tasks.register('createDockerFile', Dockerfile) {
+    group = 'distribution'
+    description = 'Create Dockerfile'
+    from 'openjdk:21'
+    copyFile layout.projectDirectory.asFile.relativePath(shadowJar.archiveFile.get().asFile), '/app/app.jar'
+    entryPoint 'java'
+    defaultCommand '-jar', '/app/app.jar'
+}
+
+// Broken on local at the moment because this plugin isn't TLS-compatible
+tasks.register('buildImage', DockerBuildImage) {
+    group = 'distribution'
+    description = 'Build Docker image'
+    dependsOn createDockerFile, shadowJar
+    dockerFile = createDockerFile.destFile
+    images = ["resbot"]
+}

@@ -15,7 +15,7 @@ class BotBuilder {
 
 	void tokenFromEnv(String env) {
 		String tokenFromEnv = System.getenv env
-		if (tokenFromEnv.empty) {
+		if (tokenFromEnv == null || tokenFromEnv.empty) {
 			throw new IllegalStateException("Specify discord token in ${env} env var")
 		}
 		token(tokenFromEnv)
