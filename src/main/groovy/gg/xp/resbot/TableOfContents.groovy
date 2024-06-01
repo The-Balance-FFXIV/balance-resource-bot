@@ -24,6 +24,7 @@ class TableOfContents extends DesiredMarkdownMessage {
 
 	@Override
 	protected Document getDocument() {
+		// TODO: this does not have a way of indicating pending links
 		Document doc = new Document()
 		Heading heading = new Heading()
 		heading.level = 3

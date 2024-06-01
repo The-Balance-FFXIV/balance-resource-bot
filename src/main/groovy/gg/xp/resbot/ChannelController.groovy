@@ -8,12 +8,15 @@ import discord4j.rest.entity.RestChannel
 import discord4j.rest.entity.RestMessage
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
+import reactor.util.Logger
+import reactor.util.Loggers
 
 import java.time.Instant
 
 @CompileStatic
 @TupleConstructor(includeFields = true, defaults = false)
 class ChannelController {
+	private static final Logger log = Loggers.getLogger(ChannelController)
 	private final Bot bot
 	private final RestChannel channel
 
@@ -31,6 +34,7 @@ class ChannelController {
 
 	void editMessage(MessageData messageData, DesiredMarkdownMessage desiredMessage) {
 
+		log.info "Editing message ${channel.id.asLong()}/${messageData.id().asLong()}"
 		def msg = getMessage messageData.id().asLong()
 
 		msg.edit(MessageEditRequest.builder().with {
@@ -40,6 +44,7 @@ class ChannelController {
 	}
 
 	MessageData postMessage(DesiredMarkdownMessage desiredMessage) {
+		log.info "Posting message to ${channel.id.asLong()}"
 		return channel.createMessage(MessageCreateRequest.builder().with {
 			content desiredMessage.desiredContent.content()
 			embeds([])
@@ -48,6 +53,7 @@ class ChannelController {
 	}
 
 	void deleteMessage(MessageData messageData) {
+		log.info "Deleting message ${channel.id.asLong()}/${messageData.id().asLong()}"
 		def msg = getMessage(messageData.id().asLong())
 		msg.delete "No longer needed" block()
 	}

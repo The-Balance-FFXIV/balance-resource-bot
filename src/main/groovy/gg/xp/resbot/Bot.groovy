@@ -23,13 +23,11 @@ class Bot {
 	private GatewayDiscordClient gatewayClient
 	private long ownUserId
 	private final Map<File, MessageData> fileMessageMap = new ConcurrentHashMap<>()
+	private final List<File> baseDataDirs
 
-	private Bot(String token) {
+	Bot(String token, List<File> baseDataDirs) {
+		this.baseDataDirs = baseDataDirs
 		this.token = token;
-	}
-
-	static Bot fromToken(String token) {
-		return new Bot(token)
 	}
 
 	void start() {
@@ -55,28 +53,33 @@ class Bot {
 
 	void runAll() {
 
-		def dataDir = new File('data')
+		List<DesiredChannelContents> allChannels = baseDataDirs.collectMany { dataDir ->
 
-		FileUtils.assertIsDir dataDir
+			FileUtils.assertIsDir dataDir
 
-		dataDir.listFiles().findAll { it.isDirectory() }.each {
-
-			log.info "Starting directory ${it.name}"
-
-			DesiredChannelContents desiredState = DesiredChannelContents.fromDir this, it
-
-			// TODO: this does not resolve cross-channel links
-			def cc = new ChannelController(this, getChannel(desiredState.channelId()))
-			def sync = new ChannelSync(this, cc, desiredState)
-			int attempts = 10
-			SyncResult result;
-			do {
-				result = sync.sync()
-			} while (result.pending && (--attempts > 0))
-			if (result.pending) {
-				throw new RuntimeException("Failed: channel '${it.name}' still has pending hyperlinks!")
+			return dataDir.listFiles().findAll { it.isDirectory() }.collect {
+				DesiredChannelContents.fromDir this, it
 			}
-			log.info "Finished directory ${it.name}"
+		}
+
+		int attempts = 10
+		def channelsToSync = allChannels.toList()
+		do {
+			// This is using findAll to retain items that still have pending edits.
+			// Anything that fully syncs with no pending links will drop off the list, and we continue
+			// the loop until the list is empty.
+			channelsToSync.retainAll { desiredState ->
+				def name = desiredState.name()
+				log.info "Starting directory ${name}"
+				def cc = new ChannelController(this, getChannel(desiredState.channelId()))
+				def sync = new ChannelSync(this, cc, desiredState)
+				SyncResult result = sync.sync()
+				log.info "Finished directory ${name} with ${result.stats.pending} pending changes"
+				return result.pending
+			}
+		} while (!channelsToSync.empty && (--attempts > 0))
+		if (!channelsToSync.empty) {
+			throw new IllegalStateException("One or more channels has unresolved links: ${channelsToSync.collect { it.name() }}")
 		}
 	}
 
@@ -117,7 +120,7 @@ class Bot {
 
 	@Nullable
 	String getFileLink(File file) {
-		MessageData msg = fileMessageMap[file]
+		MessageData msg = fileMessageMap[file.canonicalFile]
 		if (msg) {
 			long channelId = msg.channelId().asLong()
 			long msgId = msg.id().asLong()
@@ -127,12 +130,21 @@ class Bot {
 					.orElseThrow { throw new IllegalArgumentException("Message ${channelId}/${msgId} has no guild!") }.asLong()
 			return "https://discord.com/channels/${guildId}/${channelId}/${msgId}"
 		}
+		log.info "Pending link: ${file}"
 		return null
 	}
 
 	void setFileMapping(File file, MessageData message) {
 		if (file != null) {
-			this.fileMessageMap[file] = message
+			this.fileMessageMap[file.canonicalFile] = message
 		}
 	}
+
+	static Bot build(@DelegatesTo(BotBuilder) Closure<?> closure) {
+		def builder = new BotBuilder()
+		closure.setDelegate(builder)
+		closure.call()
+		return builder.build()
+	}
+
 }

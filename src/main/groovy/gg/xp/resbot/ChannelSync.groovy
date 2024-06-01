@@ -40,10 +40,12 @@ class ChannelSync {
 			DesiredMessageContent desiredContent = desiredMsg.desiredContent
 
 			if (desiredContent.pending()) {
+				log.info("Pending edit: ${desiredMsg.title}")
 				// If pending, DON'T edit. No reason to, when we're just going to edit it again
 				stats.pending++
 			}
 			else if (desiredContent.content() != actualMsg.content()) {
+				log.info("Performing edit: ${desiredMsg.title}")
 				channel.editMessage(actualMsg, desiredMsg)
 				stats.edit++
 				// TODO: validate that the desired == actual now
@@ -59,7 +61,11 @@ class ChannelSync {
 				// Anything pending will be fixed in the next pass.
 				// TODO: validate that the desired == actual now
 				if (desiredMsg.desiredContent.pending()) {
+					log.info("Create with pending links: ${desiredMsg.title}")
 					stats.pending++
+				}
+				else {
+					log.info("Create: ${desiredMsg.title}")
 				}
 				def newMsg = channel.postMessage(desiredMsg)
 				stats.create++
@@ -70,6 +76,8 @@ class ChannelSync {
 		}
 		else if (desiredCount < actualCount) {
 			for (i in desiredCount..<actualCount) {
+				// TODO can this log message be improved
+				log.info("Delete")
 				channel.deleteMessage(actual[i])
 				stats.delete++
 			}

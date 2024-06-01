@@ -7,12 +7,15 @@ import groovy.transform.ImmutableOptions
 @CompileStatic
 @ImmutableOptions(knownImmutableClasses = ChannelSettings)
 record DesiredChannelContents(
+		String name,
 		long channelId,
 		List<DesiredMarkdownMessage> desiredMessages,
 		ChannelSettings channelSettings
 ) {
+
 	static DesiredChannelContents fromDir(Bot bot, File file) {
 		FileUtils.assertIsDir file
+		String name = file.name
 		def props = new Properties()
 		def propsFile = file.toPath().resolve("channel.properties").toFile()
 		if (!propsFile.isFile()) {
@@ -43,7 +46,7 @@ record DesiredChannelContents(
 			}
 		}
 
-		return new DesiredChannelContents(channelId, desired, settings)
+		return new DesiredChannelContents(name, channelId, desired, settings)
 
 	}
 }
