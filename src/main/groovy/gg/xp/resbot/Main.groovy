@@ -14,5 +14,5 @@ static void main(String[] args) {
 	}
 	bot.start()
 	bot.runAll()
-
+	bot.stop()
 }

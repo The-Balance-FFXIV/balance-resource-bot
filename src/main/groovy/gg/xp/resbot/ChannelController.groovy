@@ -32,12 +32,12 @@ class ChannelController {
 		return (bot.getMessage channel.id.asLong(), messageId)
 	}
 
-	void editMessage(MessageData messageData, DesiredMarkdownMessage desiredMessage) {
+	MessageData editMessage(MessageData messageData, DesiredMarkdownMessage desiredMessage) {
 
 		log.info "Editing message ${channel.id.asLong()}/${messageData.id().asLong()}"
 		def msg = getMessage messageData.id().asLong()
 
-		msg.edit(MessageEditRequest.builder().with {
+		return msg.edit(MessageEditRequest.builder().with {
 			contentOrNull desiredMessage.desiredContent.content()
 			build()
 		}).block()

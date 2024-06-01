@@ -3,6 +3,7 @@ package gg.xp.resbot
 import discord4j.discordjson.json.MessageData
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
+import org.apache.commons.lang3.StringUtils
 import reactor.util.Logger
 import reactor.util.Loggers
 
@@ -13,6 +14,7 @@ class ChannelSync {
 	private final Bot bot
 	private final ChannelController channel
 	private final DesiredChannelContents desiredState
+
 
 	SyncResult sync() {
 
@@ -44,11 +46,13 @@ class ChannelSync {
 				// If pending, DON'T edit. No reason to, when we're just going to edit it again
 				stats.pending++
 			}
-			else if (desiredContent.content() != actualMsg.content()) {
+			else if (!messageContentsEqual(actualMsg, desiredContent)) {
 				log.info("Performing edit: ${desiredMsg.title}")
-				channel.editMessage(actualMsg, desiredMsg)
+				MessageData afterEdit = channel.editMessage(actualMsg, desiredMsg)
 				stats.edit++
-				// TODO: validate that the desired == actual now
+				if (!messageContentsEqual(afterEdit, desiredContent)) {
+					throw new RuntimeException("Message content was not as expected after edit. Expected:\n${desiredContent.content()}\n------\nActual:\n${afterEdit.content()}\n------\n")
+				}
 			}
 			else {
 				stats.noop++
@@ -59,26 +63,29 @@ class ChannelSync {
 				def desiredMsg = desired[i]
 				// We still post even if pending, because we can't mess up message order.
 				// Anything pending will be fixed in the next pass.
-				// TODO: validate that the desired == actual now
-				if (desiredMsg.desiredContent.pending()) {
+				DesiredMessageContent desiredContent = desiredMsg.desiredContent
+				if (desiredContent.pending()) {
 					log.info("Create with pending links: ${desiredMsg.title}")
 					stats.pending++
 				}
 				else {
 					log.info("Create: ${desiredMsg.title}")
 				}
-				def newMsg = channel.postMessage(desiredMsg)
+				MessageData newMsg = channel.postMessage(desiredMsg)
 				stats.create++
 				if (desiredMsg instanceof FileBasedMarkdownMessage) {
 					bot.setFileMapping(desiredMsg.file, newMsg)
+				}
+				if (!messageContentsEqual(newMsg, desiredContent)) {
+					throw new RuntimeException("Message content was not as expected after create. Expected:\n${desiredContent.content()}\n------\nActual:\n${newMsg.content()}\n------\n")
 				}
 			}
 		}
 		else if (desiredCount < actualCount) {
 			for (i in desiredCount..<actualCount) {
-				// TODO can this log message be improved
-				log.info("Delete")
-				channel.deleteMessage(actual[i])
+				def messageToDelete = actual[i]
+				log.info("Delete message ${messageToDelete.id().asLong()} (${StringUtils.abbreviate(messageToDelete.content(), 50)})")
+				channel.deleteMessage(messageToDelete)
 				stats.delete++
 			}
 		}
@@ -89,4 +96,7 @@ class ChannelSync {
 		return new SyncResult(stats)
 	}
 
+	private static boolean messageContentsEqual(MessageData actualMessage, DesiredMessageContent desiredMessageContent) {
+		return actualMessage.content() == desiredMessageContent.content()
+	}
 }

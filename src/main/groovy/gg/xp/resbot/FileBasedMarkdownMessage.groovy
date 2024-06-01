@@ -3,6 +3,7 @@ package gg.xp.resbot
 
 import groovy.transform.CompileStatic
 import org.commonmark.node.Document
+import org.commonmark.parser.Parser
 import reactor.util.Logger
 import reactor.util.Loggers
 import reactor.util.annotation.Nullable
@@ -10,9 +11,10 @@ import reactor.util.annotation.Nullable
 import java.util.regex.Pattern
 
 @CompileStatic
-class FileBasedMarkdownMessage extends DesiredMarkdownMessage {
+class FileBasedMarkdownMessage extends ResolvingMarkdownMessage {
 
 	private static final Logger log = Loggers.getLogger FileBasedMarkdownMessage
+	private static final Parser parser = Parser.builder().build()
 	public static Pattern fileFilter = ~/(\d+)_([^.]+)\.md/
 
 	private final @Nullable
@@ -35,6 +37,10 @@ class FileBasedMarkdownMessage extends DesiredMarkdownMessage {
 		}
 	}
 
+	protected static Document parse(String fileContents) {
+		return (Document) parser.parse(fileContents)
+	}
+
 	@Override
 	protected Document getDocument() {
 		return parse(file.text)
@@ -48,10 +54,5 @@ class FileBasedMarkdownMessage extends DesiredMarkdownMessage {
 	@Nullable
 	File getFile() {
 		return file
-	}
-
-	@Override
-	protected boolean resolveLinks() {
-		return true
 	}
 }

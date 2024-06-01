@@ -8,24 +8,21 @@ import org.jetbrains.annotations.Nullable
 class TableOfContents extends DesiredMarkdownMessage {
 
 	private final List<? extends FileBasedMarkdownMessage> contents
-	// TODO: remove baseFile from DesiredMarkdownMessage. Make a ResolvingMarkdownMessage or something
-	private final File baseFile
 
-	TableOfContents(Bot bot, List<? extends FileBasedMarkdownMessage> contents, File baseFile) {
+	TableOfContents(Bot bot, List<? extends FileBasedMarkdownMessage> contents) {
 		super(bot)
 		this.contents = contents
-		this.baseFile = baseFile
 	}
 
 	@Override
-	protected boolean resolveLinks() {
-		return false
+	protected String getTitle() {
+		return "Table of Contents"
 	}
 
 	@Override
-	protected Document getDocument() {
-		// TODO: this does not have a way of indicating pending links
+	DesiredMessageContent getDesiredContent() {
 		Document doc = new Document()
+		boolean pending = false
 		Heading heading = new Heading()
 		heading.level = 3
 		heading.appendChild(new Text(title))
@@ -49,22 +46,16 @@ class TableOfContents extends DesiredMarkdownMessage {
 				p.appendChild(link)
 			}
 			else {
+				pending = true
 				p.appendChild(text)
 			}
 			li.appendChild(p)
 			ol.appendChild(li)
 		}
 		doc.appendChild(ol)
-		return doc
-	}
 
-	@Override
-	protected File getBaseFile() {
-		return baseFile
-	}
+		def rendered = renderer.render(doc).stripTrailing()
 
-	@Override
-	protected String getTitle() {
-		return "Table of Contents"
+		return new DesiredMessageContent(rendered, pending)
 	}
 }

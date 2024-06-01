@@ -37,7 +37,7 @@ record DesiredChannelContents(
 
 		if (settings.tocEnabled) {
 
-			def toc = new TableOfContents(bot, desiredFiles.toList(), file)
+			def toc = new TableOfContents(bot, desiredFiles.toList())
 			if (settings.tocTop()) {
 				desired.add(0, toc)
 			}

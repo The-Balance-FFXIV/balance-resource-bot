@@ -8,6 +8,7 @@ import discord4j.rest.entity.RestChannel
 import discord4j.rest.entity.RestMessage
 import gg.xp.resbot.util.FileUtils
 import groovy.transform.CompileStatic
+import org.commonmark.renderer.markdown.MarkdownRenderer
 import reactor.util.Logger
 import reactor.util.Loggers
 import reactor.util.annotation.Nullable
@@ -24,31 +25,32 @@ class Bot {
 	private long ownUserId
 	private final Map<File, MessageData> fileMessageMap = new ConcurrentHashMap<>()
 	private final List<File> baseDataDirs
+	final MarkdownRenderer renderer
 
 	Bot(String token, List<File> baseDataDirs) {
 		this.baseDataDirs = baseDataDirs
 		this.token = token;
+		this.renderer = MarkdownRenderer.builder().with {
+			nodeRendererFactory(new DiscordMarkdownNodeRendererFactory())
+			build()
+		}
 	}
 
 	void start() {
+		log.info "Bot starting"
 		DiscordClient client = DiscordClient.create token
 		this.gatewayClient = client.login().block()
 		this.ownUserId = client.getSelf().block().id().asLong()
 		this.client = client
+		log.info "Bot started"
 	}
 
 	void stop() {
+		log.info "Bot stopping"
 		gatewayClient?.logout()
 		this.gatewayClient = null
 		this.client = null
-	}
-
-	DiscordClient getClient() {
-		return client
-	}
-
-	GatewayDiscordClient getGatewayClient() {
-		return gatewayClient
+		log.info "Bot stopped"
 	}
 
 	void runAll() {
@@ -59,6 +61,12 @@ class Bot {
 
 			return dataDir.listFiles().findAll { it.isDirectory() }.collect {
 				DesiredChannelContents.fromDir this, it
+			}
+		}
+		def byId = allChannels.groupBy { it.channelId() }
+		byId.each {
+			if (it.value.size() > 1) {
+				throw new IllegalArgumentException("Multiple directories specify channel ID ${it.key}: ${it.value.collect { it.name() }.join(', ')}")
 			}
 		}
 
@@ -81,6 +89,8 @@ class Bot {
 		if (!channelsToSync.empty) {
 			throw new IllegalStateException("One or more channels has unresolved links: ${channelsToSync.collect { it.name() }}")
 		}
+
+		log.info "Complete!"
 	}
 
 	RestChannel getChannel(long channelId) {
