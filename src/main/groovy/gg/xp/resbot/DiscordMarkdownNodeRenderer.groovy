@@ -2,6 +2,7 @@ package gg.xp.resbot
 
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
+import org.commonmark.node.Heading
 import org.commonmark.node.Link
 import org.commonmark.node.Node
 import org.commonmark.node.Text
@@ -28,12 +29,14 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 		c '\\' as char
 		build()
 	}
+	private final AsciiMatcher textEscape = AsciiMatcher.builder().anyOf("[]`*_&\n\\").anyOf(context.getSpecialCharacters()).build();
+	private final AsciiMatcher textEscapeInHeading = AsciiMatcher.builder(textEscape).anyOf("#").build();
 
 	private final MarkdownNodeRendererContext context;
 
 	@Override
 	Set<Class<? extends Node>> getNodeTypes() {
-		return [Link] as Set<Class<? extends Node>>
+		return [Link, Text] as Set<Class<? extends Node>>
 	}
 
 	@Override
@@ -60,19 +63,24 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 				raw(')');
 			}
 		}
+		else if (node instanceof Text) {
+			if (node.parent instanceof Link) {
+				context.writer.text node.literal, linkTitleEscapeInQuotes
+			}
+			else if (node.parent instanceof Heading) {
+				context.writer.text node.literal, textEscapeInHeading
+			}
+			else {
+				context.writer.text node.literal, textEscape
+			}
+		}
 	}
 
 	private void visitChildren(Node parent) {
 		Node next
 		for (Node node = parent.getFirstChild(); node != null; node = next) {
 			next = node.getNext();
-			if (node instanceof Text && node.parent instanceof Link) {
-				context.writer.text(node.literal, linkTitleEscapeInQuotes)
-			}
-			else {
-				this.context.render(node);
-			}
+			this.context.render(node);
 		}
-
 	}
 }
