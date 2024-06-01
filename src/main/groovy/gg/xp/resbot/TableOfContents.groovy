@@ -27,10 +27,12 @@ class TableOfContents extends DesiredMarkdownMessage {
 		Document doc = new Document()
 		Heading heading = new Heading()
 		heading.level = 3
-		heading.appendChild(new Text("Table of Contents"))
+		heading.appendChild(new Text(title))
 		doc.appendChild(heading)
 
 		def ol = new OrderedList()
+		// Cut the extra empty lines between each list item
+		ol.tight = true
 		contents.each {
 			String title = it.title
 			def li = new ListItem()
@@ -43,16 +45,13 @@ class TableOfContents extends DesiredMarkdownMessage {
 				Link link = new Link()
 				link.destination = destMaybe
 				link.appendChild(text)
-//				li.appendChild(link)
 				p.appendChild(link)
 			}
 			else {
-//				li.appendChild(text)
 				p.appendChild(text)
 			}
 			li.appendChild(p)
 			ol.appendChild(li)
-			ol.tight = true
 		}
 		doc.appendChild(ol)
 		return doc
