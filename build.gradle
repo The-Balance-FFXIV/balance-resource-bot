@@ -57,7 +57,8 @@ tasks.register('createDockerFile', Dockerfile) {
     from 'openjdk:21'
     copyFile layout.projectDirectory.asFile.relativePath(shadowJar.archiveFile.get().asFile), '/app/app.jar'
     entryPoint 'java'
-    defaultCommand '-jar', '/app/app.jar'
+    workingDir '/app'
+    defaultCommand '-jar', 'app.jar'
 }
 
 // Broken on local at the moment because this plugin isn't TLS-compatible
