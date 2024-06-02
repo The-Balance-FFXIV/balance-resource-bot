@@ -2,17 +2,14 @@ package gg.xp.resbot.markdown
 
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
-import org.commonmark.node.Emphasis
-import org.commonmark.node.Heading
-import org.commonmark.node.Link
-import org.commonmark.node.Node
-import org.commonmark.node.StrongEmphasis
-import org.commonmark.node.Text
+import org.commonmark.node.*
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.markdown.MarkdownNodeRendererContext
 import org.commonmark.renderer.markdown.MarkdownWriter
 import org.commonmark.text.AsciiMatcher
 import org.commonmark.text.CharMatcher
+
+import java.util.regex.Pattern
 
 @CompileStatic
 @TupleConstructor(includeFields = true, defaults = false)
@@ -25,7 +22,7 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 		c '\\' as char
 		build()
 	}
-	private final CharMatcher linkTitleEscapeInQuotes = AsciiMatcher.builder().with {
+	private static final CharMatcher linkTitleEscapeInQuotes = AsciiMatcher.builder().with {
 		c '"' as char
 		c '\n' as char
 		c '\\' as char
@@ -33,6 +30,8 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 	}
 	private final AsciiMatcher textEscape = AsciiMatcher.builder().anyOf("[]`*_\n\\").anyOf(context.getSpecialCharacters()).build()
 	private final AsciiMatcher textEscapeInHeading = AsciiMatcher.builder(textEscape).anyOf("#").build()
+
+	private static final Pattern urlRegex = ~/https?:\/\/[^\s$]+/
 
 	private final MarkdownNodeRendererContext context;
 
@@ -66,14 +65,27 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 			}
 		}
 		else if (node instanceof Text) {
-			if (node.parent instanceof Link) {
-				context.writer.text node.literal, linkTitleEscapeInQuotes
-			}
-			else if (node.parent instanceof Heading) {
-				context.writer.text node.literal, textEscapeInHeading
-			}
-			else {
-				context.writer.text node.literal, textEscape
+			context.writer.with {
+				if (node.parent instanceof Link) {
+					text node.literal, linkTitleEscapeInQuotes
+				}
+				else if (node.parent instanceof Heading) {
+					text node.literal, textEscapeInHeading
+				}
+				else {
+					// Write URLs in raw form, don't escape.
+					// Discord won't recognize the escapes. You will end up with garbage URLs.
+					def matcher = urlRegex.matcher node.literal
+					int currentIndex = 0
+					while (matcher.find()) {
+						int start = matcher.start()
+						int end = matcher.end()
+						text node.literal.substring(currentIndex, start), textEscape
+						raw matcher.group(0)
+						currentIndex = end
+					}
+					text node.literal.substring(currentIndex), textEscape
+				}
 			}
 		}
 		else if (node instanceof Emphasis || node instanceof StrongEmphasis) {

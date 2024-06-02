@@ -46,7 +46,14 @@ class MarkdownTest {
 
 	@Test
 	void testNoEscapeInLink() {
-		def input = "Link contains underscore https://xivapi.com/i/013000/013528_hr1.png"
+		def input = "Link contains underscore https://xivapi.com/i/013000/013528_hr1.png and text after and another link http://foo\n"
+		def result = parseAndRender input
+		Assertions.assertEquals input, result
+	}
+
+	@Test
+	void testNonEmbeddingLink() {
+		def input = "Link contains underscore <https://xivapi.com/i/013000/013528_hr1.png> and text after and another link http://foo\n"
 		def result = parseAndRender input
 		Assertions.assertEquals input, result
 	}
