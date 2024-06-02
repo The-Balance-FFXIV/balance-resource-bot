@@ -7,6 +7,7 @@ import discord4j.discordjson.json.MessageData
 import discord4j.rest.entity.RestChannel
 import discord4j.rest.entity.RestMessage
 import gg.xp.resbot.util.FileUtils
+import gg.xp.resbot.markdown.MarkdownUtils
 import groovy.transform.CompileStatic
 import org.commonmark.renderer.markdown.MarkdownRenderer
 import reactor.util.Logger
@@ -30,10 +31,7 @@ class Bot {
 	Bot(String token, List<File> baseDataDirs) {
 		this.baseDataDirs = baseDataDirs
 		this.token = token;
-		this.renderer = MarkdownRenderer.builder().with {
-			nodeRendererFactory(new DiscordMarkdownNodeRendererFactory())
-			build()
-		}
+		this.renderer = MarkdownUtils.renderer
 	}
 
 	void start() {

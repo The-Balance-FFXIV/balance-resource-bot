@@ -1,10 +1,12 @@
-package gg.xp.resbot
+package gg.xp.resbot.markdown
 
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
+import org.commonmark.node.Emphasis
 import org.commonmark.node.Heading
 import org.commonmark.node.Link
 import org.commonmark.node.Node
+import org.commonmark.node.StrongEmphasis
 import org.commonmark.node.Text
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.markdown.MarkdownNodeRendererContext
@@ -29,14 +31,14 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 		c '\\' as char
 		build()
 	}
-	private final AsciiMatcher textEscape = AsciiMatcher.builder().anyOf("[]`*_&\n\\").anyOf(context.getSpecialCharacters()).build();
-	private final AsciiMatcher textEscapeInHeading = AsciiMatcher.builder(textEscape).anyOf("#").build();
+	private final AsciiMatcher textEscape = AsciiMatcher.builder().anyOf("[]`*_\n\\").anyOf(context.getSpecialCharacters()).build()
+	private final AsciiMatcher textEscapeInHeading = AsciiMatcher.builder(textEscape).anyOf("#").build()
 
 	private final MarkdownNodeRendererContext context;
 
 	@Override
 	Set<Class<? extends Node>> getNodeTypes() {
-		return [Link, Text] as Set<Class<? extends Node>>
+		return [Link, Text, Emphasis, StrongEmphasis] as Set<Class<? extends Node>>
 	}
 
 	@Override
@@ -45,22 +47,22 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 			MarkdownWriter writer = context.writer
 
 			writer.with {
-				raw('[');
-				visitChildren(node);
-				raw(']');
-				raw('(');
-				raw('<');
-				text(node.destination, linkDestinationEscapeInAngleBrackets);
-				raw('>');
+				raw '['
+				visitChildren node
+				raw ']'
+				raw '('
+				raw '<'
+				text node.destination, linkDestinationEscapeInAngleBrackets
+				raw '>'
 
 				String title = node.title
 				if (title != null) {
-					raw(' ');
-					raw('"');
-					text(title, linkTitleEscapeInQuotes);
-					raw('"');
+					raw ' '
+					raw '"'
+					text title, linkTitleEscapeInQuotes
+					raw '"'
 				}
-				raw(')');
+				raw ')'
 			}
 		}
 		else if (node instanceof Text) {
@@ -73,6 +75,17 @@ class DiscordMarkdownNodeRenderer implements NodeRenderer {
 			else {
 				context.writer.text node.literal, textEscape
 			}
+		}
+		else if (node instanceof Emphasis || node instanceof StrongEmphasis) {
+			String delimiter = node.openingDelimiter
+			// Use delimiter that was parsed if available
+			if (delimiter == null) {
+				// When emphasis is nested, a different delimiter needs to be used
+				delimiter = context.writer.lastChar == ('*' as char) ? "_" : "*"
+			}
+			context.writer.raw delimiter
+			visitChildren node
+			context.writer.raw delimiter
 		}
 	}
 

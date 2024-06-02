@@ -1,6 +1,6 @@
 package gg.xp.resbot
 
-
+import gg.xp.resbot.markdown.MarkdownUtils
 import groovy.transform.CompileStatic
 import org.commonmark.node.Document
 import org.commonmark.parser.Parser
@@ -14,7 +14,7 @@ import java.util.regex.Pattern
 class FileBasedMarkdownMessage extends ResolvingMarkdownMessage {
 
 	private static final Logger log = Loggers.getLogger FileBasedMarkdownMessage
-	private static final Parser parser = Parser.builder().build()
+	private static final Parser parser = MarkdownUtils.parser
 	public static Pattern fileFilter = ~/(\d+)_([^.]+)\.md/
 
 	private final @Nullable

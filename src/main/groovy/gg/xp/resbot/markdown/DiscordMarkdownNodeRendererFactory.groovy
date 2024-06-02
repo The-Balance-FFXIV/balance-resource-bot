@@ -1,4 +1,4 @@
-package gg.xp.resbot
+package gg.xp.resbot.markdown
 
 import groovy.transform.CompileStatic
 import org.commonmark.renderer.NodeRenderer

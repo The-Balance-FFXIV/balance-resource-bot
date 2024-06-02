@@ -4,8 +4,10 @@ import com.bmuschko.gradle.docker.tasks.container.*
 plugins {
     id 'groovy'
     id 'application'
-    id 'com.bmuschko.docker-spring-boot-application' version '6.1.4'
+    // Shadow JAR (packs all dependencies into single JAR)
     id 'com.github.johnrengelman.shadow' version '8.1.1'
+    // Not actually used for spring boot, only for lower-level docker steps
+    id 'com.bmuschko.docker-spring-boot-application' version '6.1.4'
 }
 
 group = 'gg.xp'
@@ -16,15 +18,22 @@ repositories {
 }
 
 dependencies {
+    // Language
     implementation 'org.apache.groovy:groovy:4.0.21'
+    // Discord library
     implementation 'com.discord4j:discord4j-core:3.2.6'
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-    implementation 'org.apache.commons:commons-lang3:3.14.0'
-    compileOnly 'org.jetbrains:annotations:24.1.0'
-//    testImplementation platform('org.junit:junit-bom:5.10.2')
-//    testImplementation 'org.junit.jupiter:junit-jupiter'
+    // Markdown library
     // https://mvnrepository.com/artifact/org.commonmark/commonmark
     implementation group: 'org.commonmark', name: 'commonmark', version: '0.22.0'
+
+    // utilities
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    // @Nullable and @NonNull etc
+    compileOnly 'org.jetbrains:annotations:24.1.0'
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 application {
@@ -41,16 +50,18 @@ java {
     }
 }
 
+// Runnable JAR
 jar {
     manifest {
         attributes 'Main-Class': application.mainClass.get()
     }
 }
-//
-//test {
-//    useJUnitPlatform()
-//}
 
+test {
+    useJUnitPlatform()
+}
+
+// Only creates dockerfile - does not build
 tasks.register('createDockerFile', Dockerfile) {
     group = 'distribution'
     description = 'Create Dockerfile'
@@ -61,6 +72,7 @@ tasks.register('createDockerFile', Dockerfile) {
     defaultCommand '-jar', 'app.jar'
 }
 
+// Build docker image
 // Broken on local at the moment because this plugin isn't TLS-compatible
 tasks.register('buildImage', DockerBuildImage) {
     group = 'distribution'
