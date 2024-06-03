@@ -17,6 +17,10 @@ repositories {
     mavenCentral()
 }
 
+tasks.withType(GroovyCompile).configureEach {
+    groovyOptions.configurationScript = file 'groovyConfig.groovy'
+}
+
 dependencies {
     // Language
     implementation 'org.apache.groovy:groovy:4.0.21'

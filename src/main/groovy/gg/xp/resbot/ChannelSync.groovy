@@ -1,6 +1,7 @@
 package gg.xp.resbot
 
 import discord4j.discordjson.json.MessageData
+import gg.xp.resbot.exceptions.MessageNotSyncedException
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
 import org.apache.commons.lang3.StringUtils
@@ -51,7 +52,8 @@ class ChannelSync {
 				MessageData afterEdit = channel.editMessage(actualMsg, desiredMsg)
 				stats.edit++
 				if (!messageContentsEqual(afterEdit, desiredContent)) {
-					throw new RuntimeException("Message content was not as expected after edit. Expected:\n${desiredContent.content()}\n------\nActual:\n${afterEdit.content()}\n------\n")
+					log.error "Sync issue", new MessageNotSyncedException(desiredContent, afterEdit, "edit")
+					stats.notSynced++
 				}
 			}
 			else {
@@ -77,7 +79,8 @@ class ChannelSync {
 					bot.setFileMapping(desiredMsg.file, newMsg)
 				}
 				if (!messageContentsEqual(newMsg, desiredContent)) {
-					throw new RuntimeException("Message content was not as expected after create. Expected:\n${desiredContent.content()}\n------\nActual:\n${newMsg.content()}\n------\n")
+					log.error "Sync issue", new MessageNotSyncedException(desiredContent, newMsg, "create")
+					stats.notSynced++
 				}
 			}
 		}
