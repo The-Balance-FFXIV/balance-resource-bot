@@ -23,7 +23,7 @@ class MessageNotSyncedException extends RuntimeException {
 	}
 
 	MessageNotSyncedException(DesiredMessageContent expected, MessageData actual, String action) {
-		this(actual.channelId().asLong(), actual.id().asLong(), expected.content().size(), actual.content(), action)
+		this(actual.channelId().asLong(), actual.id().asLong(), expected.content(), actual.content(), action)
 	}
 
 
