@@ -12,9 +12,12 @@ class Main {
 			tokenFromEnv()
 			dataDir('./data')
 		}
-		bot.start()
-		bot.runAll()
-		bot.stop()
+		bot.with {
+			start()
+			runAll()
+			stop()
+		}
+		// TOOD: nonzero exit if bot had issues
 	}
 
 }

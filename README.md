@@ -25,6 +25,8 @@ table_of_contents_bottom=true
 ```
 
 Then, drop markdown files in the directory, with the name structure `xx_Title_Of_Post.md`, e.g. `01_My_First_Post.md`.
+You can use any number of digits, but I suggest numbering your pages as 10, 20, 30,... so that you can insert other
+posts between those without needing to rename the rest of the files.
 
 The markdown files can contain relative links to other markdown files managed by the bot.
 
@@ -32,7 +34,7 @@ The markdown files can contain relative links to other markdown files managed by
 
 #### Via Docker
 
-`docker run -v /path/to/data/:/app/data -e DISCORD_TOKEN='token here' ghcr.io/xpdota/discord-static-resource-bot:master`
+`docker run -v /path/to/data/:/app/data -e DISCORD_TOKEN='token here' ghcr.io/the-balance-ffxiv/discord-static-resource-bot:master`
 
 #### Directly via JAR
 
