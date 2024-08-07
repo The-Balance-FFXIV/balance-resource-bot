@@ -4,9 +4,9 @@ import gg.xp.resbot.markdown.MarkdownUtils
 import groovy.transform.CompileStatic
 import org.commonmark.node.Document
 import org.commonmark.parser.Parser
+import org.jetbrains.annotations.Nullable
 import reactor.util.Logger
 import reactor.util.Loggers
-import reactor.util.annotation.Nullable
 
 import java.util.regex.Pattern
 
@@ -17,8 +17,9 @@ class FileBasedMarkdownMessage extends ResolvingMarkdownMessage {
 	private static final Parser parser = MarkdownUtils.parser
 	public static Pattern fileFilter = ~/(\d+)_([^.]+)\.md/
 
-	private final @Nullable
-	File file
+	@Nullable
+	private final File file
+
 	final int sortOrder
 	final String title
 

@@ -62,25 +62,31 @@ class ChannelSync {
 		}
 		if (desiredCount > actualCount) {
 			for (i in actualCount..<desiredCount) {
-				def desiredMsg = desired[i]
-				// We still post even if pending, because we can't mess up message order.
-				// Anything pending will be fixed in the next pass.
-				DesiredMessageContent desiredContent = desiredMsg.desiredContent
-				if (desiredContent.pending()) {
-					log.info("Create with pending links: ${desiredMsg.title}")
-					stats.pending++
+				try {
+					def desiredMsg = desired[i]
+					// We still post even if pending, because we can't mess up message order.
+					// Anything pending will be fixed in the next pass.
+					DesiredMessageContent desiredContent = desiredMsg.desiredContent
+					if (desiredContent.pending()) {
+						log.info("Create with pending links: ${desiredMsg.title}")
+						stats.pending++
+					}
+					else {
+						log.info("Create: ${desiredMsg.title}")
+					}
+					MessageData newMsg = channel.postMessage(desiredMsg)
+					stats.create++
+					if (desiredMsg instanceof FileBasedMarkdownMessage) {
+						bot.setFileMapping(desiredMsg.file, newMsg)
+					}
+					if (!messageContentsEqual(newMsg, desiredContent)) {
+						log.error "Sync issue", new MessageNotSyncedException(desiredContent, newMsg, "create")
+						stats.notSynced++
+					}
 				}
-				else {
-					log.info("Create: ${desiredMsg.title}")
-				}
-				MessageData newMsg = channel.postMessage(desiredMsg)
-				stats.create++
-				if (desiredMsg instanceof FileBasedMarkdownMessage) {
-					bot.setFileMapping(desiredMsg.file, newMsg)
-				}
-				if (!messageContentsEqual(newMsg, desiredContent)) {
-					log.error "Sync issue", new MessageNotSyncedException(desiredContent, newMsg, "create")
-					stats.notSynced++
+				catch (Throwable t) {
+					log.error "Sync error", t
+					stats.error++;
 				}
 			}
 		}

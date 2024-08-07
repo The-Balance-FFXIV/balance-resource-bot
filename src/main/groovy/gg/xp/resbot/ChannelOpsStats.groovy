@@ -10,8 +10,9 @@ class ChannelOpsStats {
 	int create
 	int delete
 	int notSynced
+	int error
 
 	String format() {
-		return "Noop: ${noop}; Pending: ${pending}; Edit: ${edit}; Create: ${create}; Delete: ${delete}, Not Synced: ${notSynced}"
+		return "Noop: ${noop}; Pending: ${pending}; Edit: ${edit}; Create: ${create}; Delete: ${delete}, Not Synced: ${notSynced}, Error: ${error}"
 	}
 }
