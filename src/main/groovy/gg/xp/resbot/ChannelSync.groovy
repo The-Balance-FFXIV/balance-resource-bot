@@ -49,7 +49,15 @@ class ChannelSync {
 			}
 			else if (!messageContentsEqual(actualMsg, desiredContent)) {
 				log.info("Performing edit: ${desiredMsg.title}")
-				MessageData afterEdit = channel.editMessage(actualMsg, desiredMsg)
+				MessageData afterEdit
+				try {
+					afterEdit = channel.editMessage(actualMsg, desiredMsg)
+				}
+				catch (Throwable t) {
+					log.error "Sync error", t
+					stats.error++
+					continue
+				}
 				stats.edit++
 				if (!messageContentsEqual(afterEdit, desiredContent)) {
 					log.error "Sync issue", new MessageNotSyncedException(desiredContent, afterEdit, "edit")
@@ -74,7 +82,15 @@ class ChannelSync {
 					else {
 						log.info("Create: ${desiredMsg.title}")
 					}
-					MessageData newMsg = channel.postMessage(desiredMsg)
+					MessageData newMsg
+					try {
+						newMsg = channel.postMessage(desiredMsg)
+					}
+					catch (Throwable t) {
+						log.error "Sync error", t
+						stats.error++
+						continue
+					}
 					stats.create++
 					if (desiredMsg instanceof FileBasedMarkdownMessage) {
 						bot.setFileMapping(desiredMsg.file, newMsg)
@@ -94,7 +110,14 @@ class ChannelSync {
 			for (i in desiredCount..<actualCount) {
 				def messageToDelete = actual[i]
 				log.info("Delete message ${messageToDelete.id().asLong()} (${StringUtils.abbreviate(messageToDelete.content(), 50)})")
-				channel.deleteMessage(messageToDelete)
+				try {
+					channel.deleteMessage(messageToDelete)
+				}
+				catch (Throwable t) {
+					log.error "Sync error", t
+					stats.error++
+					continue
+				}
 				stats.delete++
 			}
 		}
