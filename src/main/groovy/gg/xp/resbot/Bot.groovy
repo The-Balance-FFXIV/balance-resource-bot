@@ -106,7 +106,11 @@ class Bot {
 	LinkResolution resolveLink(File base, String rawLink) {
 		try {
 			// Keep real URLs intact
-			return new LinkResolution(new URI(rawLink).toURL().toString(), false)
+			// URI API does not allow pipe characters in query params. That is technically the correct behavior, but
+			// the entire rest of the stack, namely the browser, seems to accept those. URL, on the other hand, doesn't
+			// care.
+			//noinspection GrDeprecatedAPIUsage
+			return new LinkResolution(new URL(rawLink).toString(), false)
 		}
 		// If it isn't a real URL, resolve it as a relative file
 		catch (Throwable ignored) {

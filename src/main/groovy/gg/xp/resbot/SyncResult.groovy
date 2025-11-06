@@ -8,6 +8,6 @@ class SyncResult {
 	final ChannelOpsStats stats
 
 	boolean isPending() {
-		return stats.pending > 0
+		return stats.pending > 0 || stats.error > 0
 	}
 }
