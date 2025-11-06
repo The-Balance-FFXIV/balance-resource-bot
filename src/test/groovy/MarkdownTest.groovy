@@ -64,4 +64,11 @@ class MarkdownTest {
 		def result = parseAndRender input
 		Assertions.assertEquals input, result
 	}
+
+	@Test
+	void testLinkWithPipe() {
+		def input = '[Ultimate Sets](<https://xivgear.app/?page=bis|sge|ultimate|fru>)\n'
+		def result = parseAndRender input
+		Assertions.assertEquals input, result
+	}
 }
