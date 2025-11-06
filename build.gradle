@@ -69,7 +69,7 @@ test {
 tasks.register('createDockerFile', Dockerfile) {
     group = 'distribution'
     description = 'Create Dockerfile'
-    from 'openjdk:21'
+    from 'eclipse-temurin:21'
     copyFile layout.projectDirectory.asFile.relativePath(shadowJar.archiveFile.get().asFile), '/app/app.jar'
     entryPoint 'java'
     workingDir '/app'
